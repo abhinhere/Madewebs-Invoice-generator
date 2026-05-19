@@ -284,7 +284,7 @@ export const InvoicePDF = ({ data }: { data: InvoiceData }) => {
     <Document>
       <Page size="A4" style={styles.page}>
         {/* Watermark */}
-        <Image style={styles.watermark} src="/images/made_cover.png" />
+        <Image style={styles.watermark} src="/images/coverimage.png" />
 
         {/* Header */}
         <View style={styles.header}>

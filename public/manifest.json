@@ -1,6 +1,6 @@
 {
-  "name": "Profile Interior Invoices Generator",
-  "short_name": "ProfileInteriorInvoices",
+  "name": "MadeWebs Invoices Generator",
+  "short_name": "MadeWebsInvoices",
   "description": "Generate and manage invoices effortlessly",
   "start_url": "/",
   "display": "standalone",
@@ -8,12 +8,12 @@
   "theme_color": "#0f172a",
   "icons": [
     {
-      "src": "/images/profile_logo_192.png",
+      "src": "/images/appicon_192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/images/profile_logo_512.png",
+      "src": "/images/appicon_512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
