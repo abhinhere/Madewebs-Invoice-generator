@@ -32,6 +32,8 @@ interface InvoiceData {
   discountAmount: number
   total: number
   invoiceNumber?: string
+  advancePayment?: number
+  balanceDue?: number
 }
 
 export default function PdfDownloadButton({ invoiceData }: { invoiceData: InvoiceData }) {
@@ -161,14 +163,6 @@ export default function PdfDownloadButton({ invoiceData }: { invoiceData: Invoic
       // Check if the browser supports the Web Share API with files
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
-          title: `Invoice ${invoiceNumber} - ${invoiceData.customerName || "Customer"}`,
-          text: `Invoice ${invoiceNumber} for ${format(invoiceData.date || new Date(), "dd/MM/yyyy")} - Total: ${new Intl.NumberFormat(
-            "en-IN",
-            {
-              style: "currency",
-              currency: "INR",
-            },
-          ).format(invoiceData.total)}`,
           files: [file],
         })
 
@@ -189,7 +183,11 @@ Invoice Details:
 - Total Amount: ${new Intl.NumberFormat("en-IN", {
           style: "currency",
           currency: "INR",
-        }).format(invoiceData.total)}
+        }).format(invoiceData.total)}${
+          invoiceData.advancePayment && invoiceData.advancePayment > 0
+            ? `\n- Advance Paid: ${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(invoiceData.advancePayment)}\n- Balance Due: ${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(invoiceData.balanceDue || 0)}`
+            : ""
+        }
 
 Thank you for your business!
 
@@ -237,14 +235,6 @@ MADE PRODUCT`
       // Check if the browser supports the Web Share API with files
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
-          title: `Invoice ${invoiceNumber} - ${invoiceData.customerName || "Customer"}`,
-          text: `📄 Invoice PDF\n\nInvoice: ${invoiceNumber}\nCustomer: ${invoiceData.customerName || "Customer"}\nDate: ${format(
-            invoiceData.date || new Date(),
-            "dd/MM/yyyy",
-          )}\nTotal: ${new Intl.NumberFormat("en-IN", {
-            style: "currency",
-            currency: "INR",
-          }).format(invoiceData.total)}`,
           files: [file],
         })
 
@@ -256,19 +246,7 @@ MADE PRODUCT`
         // Fallback: Download PDF and open WhatsApp Web
         downloadPdf()
 
-        const message = `📄 *Invoice PDF*
-
-Invoice: ${invoiceNumber}
-Customer: ${invoiceData.customerName || "Customer"}
-Date: ${format(invoiceData.date || new Date(), "dd/MM/yyyy")}
-Total: ${new Intl.NumberFormat("en-IN", {
-          style: "currency",
-          currency: "INR",
-        }).format(invoiceData.total)}
-
-Please find the invoice PDF in your downloads folder.`
-
-        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`
+        const whatsappUrl = `https://wa.me/`
         window.open(whatsappUrl, "_blank")
 
         toast({
@@ -319,14 +297,6 @@ Please find the invoice PDF in your downloads folder.`
       }
 
       await navigator.share({
-        title: `Invoice ${invoiceNumber}`,
-        text: `Invoice ${invoiceNumber} for ${invoiceData.customerName || "Customer"} - ${new Intl.NumberFormat(
-          "en-IN",
-          {
-            style: "currency",
-            currency: "INR",
-          },
-        ).format(invoiceData.total)}`,
         files: [file],
       })
 
@@ -398,7 +368,6 @@ Please find the invoice PDF in your downloads folder.`
       // Try to use Web Share API first
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
-          title: `Invoice ${invoiceNumber} - ${invoiceData.customerName || "Customer"}`,
           files: [file],
         })
 

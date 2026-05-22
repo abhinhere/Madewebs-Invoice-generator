@@ -22,6 +22,8 @@ interface InvoiceData {
   discountAmount: number
   total: number
   invoiceNumber?: string // Add optional invoice number
+  advancePayment?: number
+  balanceDue?: number
 }
 
 // Create enhanced styles
@@ -264,6 +266,7 @@ const styles = StyleSheet.create({
 
 // Validate and sanitize invoice data
 const validateInvoiceData = (data: InvoiceData) => {
+  const totalVal = typeof data?.total === "number" ? data.total : 0
   return {
     customerName: data?.customerName || "Customer Name",
     date: data?.date || new Date(),
@@ -271,8 +274,10 @@ const validateInvoiceData = (data: InvoiceData) => {
     discount: typeof data?.discount === "number" ? data.discount : 0,
     subtotal: typeof data?.subtotal === "number" ? data.subtotal : 0,
     discountAmount: typeof data?.discountAmount === "number" ? data.discountAmount : 0,
-    total: typeof data?.total === "number" ? data.total : 0,
+    total: totalVal,
     invoiceNumber: data?.invoiceNumber || "INV-0001",
+    advancePayment: typeof data?.advancePayment === "number" ? data.advancePayment : 0,
+    balanceDue: typeof data?.balanceDue === "number" ? data.balanceDue : totalVal,
   }
 }
 
@@ -365,10 +370,28 @@ export const InvoicePDF = ({ data }: { data: InvoiceData }) => {
               <Text style={styles.summaryLabel}>Subtotal</Text>
               <Text style={styles.summaryValue}>{RS(validatedData.subtotal)}</Text>
             </View>
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Total Amount</Text>
-              <Text style={styles.totalValue}>{RS(validatedData.total)}</Text>
+            {validatedData.discountAmount > 0 && (
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Discount ({validatedData.discount}%)</Text>
+                <Text style={styles.summaryValue}>- {RS(validatedData.discountAmount)}</Text>
+              </View>
+            )}
+            <View style={validatedData.advancePayment > 0 ? styles.summaryRow : styles.totalRow}>
+              <Text style={validatedData.advancePayment > 0 ? styles.summaryLabel : styles.totalLabel}>Total Amount</Text>
+              <Text style={validatedData.advancePayment > 0 ? styles.summaryValue : styles.totalValue}>{RS(validatedData.total)}</Text>
             </View>
+            {validatedData.advancePayment > 0 && (
+              <>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Advance Paid</Text>
+                  <Text style={styles.summaryValue}>- {RS(validatedData.advancePayment)}</Text>
+                </View>
+                <View style={styles.totalRow}>
+                  <Text style={styles.totalLabel}>Balance Due</Text>
+                  <Text style={styles.totalValue}>{RS(validatedData.balanceDue)}</Text>
+                </View>
+              </>
+            )}
           </View>
         </View>
 
