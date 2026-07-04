@@ -33,7 +33,7 @@ export function Navigation() {
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2 font-bold text-xl text-slate-900 select-none">
               <Landmark className="h-6 w-6 text-slate-900" />
-              <span>MadeWebs Generators</span>
+              <span>MadeWebs</span>
             </Link>
 
             <nav className="hidden md:flex items-center gap-2">
@@ -44,11 +44,10 @@ export function Navigation() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                      active
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${active
                         ? `${colors.bg} text-white shadow-sm hover:opacity-90`
                         : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                    }`}
+                      }`}
                   >
                     {item.name}
                   </Link>
@@ -73,9 +72,8 @@ export function Navigation() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all duration-200 ${
-                active ? `${colors.text} font-semibold` : "text-slate-500 hover:text-slate-900"
-              }`}
+              className={`flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all duration-200 ${active ? `${colors.text} font-semibold` : "text-slate-500 hover:text-slate-900"
+                }`}
             >
               <Icon className={`h-5 w-5 transition-transform ${active ? "scale-110" : ""}`} />
               <span className="text-[10px] tracking-wide">{item.name}</span>

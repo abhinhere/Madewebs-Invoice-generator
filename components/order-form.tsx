@@ -12,11 +12,20 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { ThreeDElement } from "@/components/three-d-element"
 
 // Dynamically import the PDF download button with no SSR
 const PdfDownloadButton = dynamic(() => import("./pdf-download-button"), {
   ssr: false,
+})
+
+// Dynamically import the 3D element with a loading pulse skeleton to make page switching instant
+const ThreeDElement = dynamic(() => import("./three-d-element").then((mod) => mod.ThreeDElement), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full min-h-[300px] rounded-lg bg-gradient-to-br from-slate-50 to-slate-200 animate-pulse flex flex-col items-center justify-center text-slate-400 text-sm gap-2 select-none border border-slate-100">
+      <span>Loading 3D View...</span>
+    </div>
+  ),
 })
 
 // Define the item interface

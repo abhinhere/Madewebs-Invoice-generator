@@ -6,7 +6,7 @@ export default function QuotationPage() {
       <div className="max-w-5xl mx-auto flex-grow w-full pb-16 md:pb-0">
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-indigo-950">Quotation Generator</h1>
-          <p className="text-indigo-600/80 text-sm mt-1">Create professional price quotations and estimates instantly.</p>
+          <p className="text-indigo-600/80 text-sm mt-1">Create professional quotations instantly.</p>
         </div>
         <OrderForm mode="quotation" />
       </div>

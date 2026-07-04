@@ -11,8 +11,16 @@ function Calculator() {
 
   useFrame((state) => {
     if (group.current) {
-      group.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.1
+      // Float animation
       group.current.position.y = Math.sin(state.clock.elapsedTime) * 0.05
+      
+      // Calculate scroll rotation
+      const scrollY = typeof window !== "undefined" ? window.scrollY : 0
+      
+      // Dynamic rotation: base auto-rotate + scroll Y-axis rotation
+      group.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.25) * 0.1 + (scrollY * 0.003)
+      // Slight X-axis rotation based on scroll for 3D depth tilt
+      group.current.rotation.x = scrollY * 0.0008
     }
   })
 
@@ -206,7 +214,7 @@ function LoadingFallback() {
 
 export function ThreeDElement() {
   return (
-    <div className="w-full h-full rounded-lg overflow-hidden bg-gradient-to-br from-slate-50 to-slate-200 shadow-xl">
+    <div className="w-full h-full rounded-lg overflow-hidden bg-gradient-to-br from-slate-50 to-slate-200 shadow-xl pointer-events-none md:pointer-events-auto">
       <Canvas camera={{ position: [0, 0, 6], fov: 50 }}>
         <ambientLight intensity={0.6} />
         <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} />
@@ -215,7 +223,7 @@ export function ThreeDElement() {
         <Suspense fallback={<LoadingFallback />}>
           <Calculator />
         </Suspense>
-        <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={0.3} />
+        <OrbitControls enableZoom={false} enablePan={false} />
         <Environment preset="city" />
       </Canvas>
     </div>
