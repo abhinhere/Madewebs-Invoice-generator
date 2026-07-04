@@ -1,15 +1,16 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import { Navigation } from "@/components/navigation"
 
 export const metadata: Metadata = {
-  title: 'Invoice Generator',
-  description: 'Generate and manage invoices effortlessly',
+  title: 'MadeWebs Generators',
+  description: 'Generate invoices, quotations, and receipts effortlessly',
   generator: 'Abhin.c',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Invoice Generator',
+    title: 'MadeWebs Generators',
   },
 }
 
@@ -24,7 +25,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
+      <body className="bg-slate-50 min-h-screen pb-safe">
+        <Navigation />
         {children}
       </body>
     </html>

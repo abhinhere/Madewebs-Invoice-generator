@@ -24,6 +24,7 @@ interface InvoiceData {
   invoiceNumber?: string // Add optional invoice number
   advancePayment?: number
   balanceDue?: number
+  mode?: "invoice" | "quotation" | "receipt"
 }
 
 // Create enhanced styles
@@ -96,17 +97,18 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   subtitle: {
-    fontSize: 12,
+    fontSize: 10,
     color: "#4A5568",
-    marginBottom: 10,
+    marginBottom: 5,
+    fontWeight: "bold",
+    textTransform: "uppercase",
   },
   invoiceNumber: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "bold",
-    color: "#000000",
-    backgroundColor: "#185874ff",
-    padding: "5 10",
-    borderRadius: 3,
+    color: "#FFFFFF",
+    padding: "6 12",
+    borderRadius: 4,
   },
   infoSection: {
     flexDirection: "row",
@@ -147,7 +149,6 @@ const styles = StyleSheet.create({
   },
   tableHeader: {
     flexDirection: "row",
-    backgroundColor: "#2D3748",
     paddingVertical: 12,
     paddingHorizontal: 15,
     borderTopLeftRadius: 5,
@@ -278,12 +279,40 @@ const validateInvoiceData = (data: InvoiceData) => {
     invoiceNumber: data?.invoiceNumber || "INV-0001",
     advancePayment: typeof data?.advancePayment === "number" ? data.advancePayment : 0,
     balanceDue: typeof data?.balanceDue === "number" ? data.balanceDue : totalVal,
+    mode: data?.mode || "invoice",
   }
 }
 
 // Create PDF Document
 export const InvoicePDF = ({ data }: { data: InvoiceData }) => {
   const validatedData = validateInvoiceData(data)
+  
+  const mode = validatedData.mode || "invoice"
+  const isInvoice = mode === "invoice"
+  const isQuotation = mode === "quotation"
+  const isReceipt = mode === "receipt"
+
+  // Dynamic colors for PDF branding
+  const colors = {
+    invoice: {
+      primary: "#1e293b", // slate-800
+      primaryLight: "#f1f5f9", // slate-100
+      accent: "#1e293b", // slate-800
+      accentLight: "#eff6ff",
+    },
+    quotation: {
+      primary: "#4f46e5", // indigo-600
+      primaryLight: "#e0e7ff", // indigo-100
+      accent: "#4f46e5", // indigo-600
+      accentLight: "#f5f3ff",
+    },
+    receipt: {
+      primary: "#059669", // emerald-600
+      primaryLight: "#d1fae5", // emerald-100
+      accent: "#059669", // emerald-600
+      accentLight: "#f0fdf4",
+    },
+  }[mode]
 
   return (
     <Document>
@@ -292,7 +321,7 @@ export const InvoicePDF = ({ data }: { data: InvoiceData }) => {
         <Image style={styles.watermark} src="/images/coverimage.png" />
 
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: colors.primary }]}>
           <View style={styles.logoSection}>
             <Image style={styles.logo} src="/images/logo.png" />
             <View style={styles.companyInfo}>
@@ -313,29 +342,41 @@ export const InvoicePDF = ({ data }: { data: InvoiceData }) => {
             </View>
           </View>
           <View style={styles.invoiceSection}>
-            <Text style={styles.title}>INVOICE</Text>
-            <Text style={styles.subtitle}>Invoice no :</Text>
-            <Text style={styles.invoiceNumber}>{validatedData.invoiceNumber}</Text>
+            <Text style={[styles.title, { color: colors.primary }]}>
+              {isInvoice ? "INVOICE" : isQuotation ? "QUOTATION" : "RECEIPT"}
+            </Text>
+            <Text style={styles.subtitle}>
+              {isInvoice ? "Invoice no :" : isQuotation ? "Quotation no :" : "Receipt no :"}
+            </Text>
+            <Text style={[styles.invoiceNumber, { backgroundColor: colors.accent }]}>
+              {validatedData.invoiceNumber}
+            </Text>
           </View>
         </View>
 
         {/* Invoice Information */}
         <View style={styles.infoSection}>
           <View style={styles.infoColumn}>
-            <Text style={styles.sectionTitle}>Bill To</Text>
+            <Text style={[styles.sectionTitle, { color: colors.primary }]}>
+              {isInvoice ? "Bill To" : isQuotation ? "Quote To" : "Receipt To"}
+            </Text>
             <Text style={styles.infoLabel}>Customer Name</Text>
             <Text style={styles.infoValue}>{validatedData.customerName}</Text>
           </View>
           <View style={styles.infoColumn}>
-            <Text style={styles.sectionTitle}>Invoice Details</Text>
-            <Text style={styles.infoLabel}>Invoice Date</Text>
+            <Text style={[styles.sectionTitle, { color: colors.primary }]}>
+              {isInvoice ? "Invoice Details" : isQuotation ? "Quotation Details" : "Receipt Details"}
+            </Text>
+            <Text style={styles.infoLabel}>
+              {isInvoice ? "Invoice Date" : isQuotation ? "Quotation Date" : "Receipt Date"}
+            </Text>
             <Text style={styles.infoValue}>{format(validatedData.date, "dd MMMM yyyy")}</Text>
           </View>
         </View>
 
         {/* Items Table */}
         <View style={styles.table}>
-          <View style={styles.tableHeader}>
+          <View style={[styles.tableHeader, { backgroundColor: colors.primary }]}>
             <Text style={[styles.tableHeaderText, styles.tableColName]}>Description</Text>
             <Text style={[styles.tableHeaderText, styles.tableColQty]}>Qty</Text>
             <Text style={[styles.tableHeaderText, styles.tableColRate]}>Rate</Text>
@@ -376,17 +417,27 @@ export const InvoicePDF = ({ data }: { data: InvoiceData }) => {
                 <Text style={styles.summaryValue}>- {RS(validatedData.discountAmount)}</Text>
               </View>
             )}
-            <View style={validatedData.advancePayment > 0 ? styles.summaryRow : styles.totalRow}>
-              <Text style={validatedData.advancePayment > 0 ? styles.summaryLabel : styles.totalLabel}>Total Amount</Text>
-              <Text style={validatedData.advancePayment > 0 ? styles.summaryValue : styles.totalValue}>{RS(validatedData.total)}</Text>
+
+            {/* Total Amount Row */}
+            <View style={(!isQuotation && validatedData.advancePayment > 0) ? styles.summaryRow : [styles.totalRow, { borderTopColor: colors.primary }]}>
+              <Text style={(!isQuotation && validatedData.advancePayment > 0) ? styles.summaryLabel : styles.totalLabel}>
+                {isQuotation ? "Estimated Total" : "Total Amount"}
+              </Text>
+              <Text style={(!isQuotation && validatedData.advancePayment > 0) ? styles.summaryValue : styles.totalValue}>
+                {RS(validatedData.total)}
+              </Text>
             </View>
-            {validatedData.advancePayment > 0 && (
+
+            {/* Advance payment and Balance due - Hidden for Quotations */}
+            {!isQuotation && validatedData.advancePayment > 0 && (
               <>
                 <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Advance Paid</Text>
+                  <Text style={styles.summaryLabel}>
+                    {isReceipt ? "Amount Paid" : "Advance Paid"}
+                  </Text>
                   <Text style={styles.summaryValue}>- {RS(validatedData.advancePayment)}</Text>
                 </View>
-                <View style={styles.totalRow}>
+                <View style={[styles.totalRow, { borderTopColor: colors.primary }]}>
                   <Text style={styles.totalLabel}>Balance Due</Text>
                   <Text style={styles.totalValue}>{RS(validatedData.balanceDue)}</Text>
                 </View>
@@ -397,8 +448,16 @@ export const InvoicePDF = ({ data }: { data: InvoiceData }) => {
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.thankYou}>Thank you for your Purchase!</Text>
-          <Text style={styles.footerText}>This is a computer-generated invoice and does not require a signature.</Text>
+          <Text style={styles.thankYou}>
+            {isInvoice 
+              ? "Thank you for your Purchase!" 
+              : isQuotation 
+                ? "Thank you for your business!" 
+                : "Thank you for your payment!"}
+          </Text>
+          <Text style={styles.footerText}>
+            This is a computer-generated {mode} and does not require a signature.
+          </Text>
           <Text style={styles.footerText}>
             For any queries, please contact us at www.madewebs.in | +91 7559907591
           </Text>

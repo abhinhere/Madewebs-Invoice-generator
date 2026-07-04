@@ -34,6 +34,7 @@ interface InvoiceData {
   invoiceNumber?: string
   advancePayment?: number
   balanceDue?: number
+  mode?: "invoice" | "quotation" | "receipt"
 }
 
 export default function PdfDownloadButton({ invoiceData }: { invoiceData: InvoiceData }) {
@@ -42,6 +43,9 @@ export default function PdfDownloadButton({ invoiceData }: { invoiceData: Invoic
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null)
   const [pdfUrl, setPdfUrl] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+
+  const mode = invoiceData.mode || "invoice"
+  const docType = mode === "quotation" ? "Quotation" : mode === "receipt" ? "Receipt" : "Invoice"
 
   useEffect(() => {
     setIsClient(true)
@@ -56,15 +60,14 @@ export default function PdfDownloadButton({ invoiceData }: { invoiceData: Invoic
     }
   }, [pdfUrl])
 
-
-
   const generateInvoiceNumber = () => {
     const now = new Date()
     const year = now.getFullYear()
     const month = String(now.getMonth() + 1).padStart(2, "0")
     const day = String(now.getDate()).padStart(2, "0")
     const time = String(now.getHours()).padStart(2, "0") + String(now.getMinutes()).padStart(2, "0")
-    return `INV-${year}${month}${day}-${time}`
+    const prefix = mode === "quotation" ? "QTN" : mode === "receipt" ? "REC" : "INV"
+    return `${prefix}-${year}${month}${day}-${time}`
   }
 
   const generatePdf = async () => {
@@ -81,7 +84,7 @@ export default function PdfDownloadButton({ invoiceData }: { invoiceData: Invoic
       // Generate new invoice number
       const invoiceNumber = generateInvoiceNumber()
 
-      // Add invoice number to invoice data
+      // Add invoice number and mode to invoice data
       const invoiceDataWithNumber = {
         ...invoiceData,
         invoiceNumber,
@@ -110,14 +113,14 @@ export default function PdfDownloadButton({ invoiceData }: { invoiceData: Invoic
       document.body.removeChild(link)
 
       toast({
-        title: "Invoice Generated!",
-        description: `Invoice ${invoiceNumber} PDF generated and downloaded.`,
+        title: `${docType} Generated!`,
+        description: `${docType} ${invoiceNumber} PDF generated and downloaded.`,
       })
     } catch (error) {
       console.error("Error generating PDF:", error)
       toast({
         title: "Error",
-        description: "Failed to generate PDF. Please try again.",
+        description: `Failed to generate ${docType.toLowerCase()} PDF. Please try again.`,
         variant: "destructive",
       })
     } finally {
@@ -130,7 +133,8 @@ export default function PdfDownloadButton({ invoiceData }: { invoiceData: Invoic
 
     const customerName = invoiceData.customerName || "Customer"
     const dateStr = format(invoiceData.date || new Date(), "yyyy-MM-dd")
-    const invoiceNumber = invoiceData.invoiceNumber || "INV-0001"
+    const prefix = mode === "quotation" ? "QTN" : mode === "receipt" ? "REC" : "INV"
+    const invoiceNumber = invoiceData.invoiceNumber || `${prefix}-0001`
     const filename = `${invoiceNumber}_${customerName.replace(/[^a-zA-Z0-9]/g, "_")}_${dateStr}.pdf`
 
     const link = document.createElement("a")
@@ -142,7 +146,7 @@ export default function PdfDownloadButton({ invoiceData }: { invoiceData: Invoic
 
     toast({
       title: "Download Started",
-      description: "Your invoice PDF is being downloaded.",
+      description: `Your ${docType.toLowerCase()} PDF is being downloaded.`,
     })
   }
 
@@ -152,7 +156,8 @@ export default function PdfDownloadButton({ invoiceData }: { invoiceData: Invoic
     try {
       const customerName = invoiceData.customerName || "Customer"
       const dateStr = format(invoiceData.date || new Date(), "yyyy-MM-dd")
-      const invoiceNumber = invoiceData.invoiceNumber || "INV-0001"
+      const prefix = mode === "quotation" ? "QTN" : mode === "receipt" ? "REC" : "INV"
+      const invoiceNumber = invoiceData.invoiceNumber || `${prefix}-0001`
       const filename = `${invoiceNumber}_${customerName.replace(/[^a-zA-Z0-9]/g, "_")}_${dateStr}.pdf`
 
       // Create a File object from the blob
@@ -168,24 +173,24 @@ export default function PdfDownloadButton({ invoiceData }: { invoiceData: Invoic
 
         toast({
           title: "Shared Successfully",
-          description: "Invoice PDF has been shared via email.",
+          description: `${docType} PDF has been shared.`,
         })
       } else {
         // Fallback: Create a mailto link and download the file
-        const subject = `Invoice ${invoiceNumber} - ${format(invoiceData.date || new Date(), "dd/MM/yyyy")}`
+        const subject = `${docType} ${invoiceNumber} - ${format(invoiceData.date || new Date(), "dd/MM/yyyy")}`
         const body = `Dear ${invoiceData.customerName || "Customer"},
 
-Please find the attached invoice for your recent purchase.
+Please find the attached ${docType.toLowerCase()} for your review/records.
 
-Invoice Details:
-- Invoice Number: ${invoiceNumber}
+${docType} Details:
+- ${docType} Number: ${invoiceNumber}
 - Date: ${format(invoiceData.date || new Date(), "dd MMMM yyyy")}
 - Total Amount: ${new Intl.NumberFormat("en-IN", {
           style: "currency",
           currency: "INR",
         }).format(invoiceData.total)}${
-          invoiceData.advancePayment && invoiceData.advancePayment > 0
-            ? `\n- Advance Paid: ${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(invoiceData.advancePayment)}\n- Balance Due: ${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(invoiceData.balanceDue || 0)}`
+          mode !== "quotation" && invoiceData.advancePayment && invoiceData.advancePayment > 0
+            ? `\n- ${mode === "receipt" ? "Amount Paid" : "Advance Paid"}: ${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(invoiceData.advancePayment)}\n- Balance Due: ${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(invoiceData.balanceDue || 0)}`
             : ""
         }
 
@@ -224,7 +229,8 @@ MADE PRODUCT`
     try {
       const customerName = invoiceData.customerName || "Customer"
       const dateStr = format(invoiceData.date || new Date(), "yyyy-MM-dd")
-      const invoiceNumber = invoiceData.invoiceNumber || "INV-0001"
+      const prefix = mode === "quotation" ? "QTN" : mode === "receipt" ? "REC" : "INV"
+      const invoiceNumber = invoiceData.invoiceNumber || `${prefix}-0001`
       const filename = `${invoiceNumber}_${customerName.replace(/[^a-zA-Z0-9]/g, "_")}_${dateStr}.pdf`
 
       // Create a File object from the blob
@@ -240,7 +246,7 @@ MADE PRODUCT`
 
         toast({
           title: "Shared Successfully",
-          description: "Invoice PDF has been shared via WhatsApp.",
+          description: `${docType} PDF has been shared.`,
         })
       } else {
         // Fallback: Download PDF and open WhatsApp Web
@@ -279,7 +285,8 @@ MADE PRODUCT`
     try {
       const customerName = invoiceData.customerName || "Customer"
       const dateStr = format(invoiceData.date || new Date(), "yyyy-MM-dd")
-      const invoiceNumber = invoiceData.invoiceNumber || "INV-0001"
+      const prefix = mode === "quotation" ? "QTN" : mode === "receipt" ? "REC" : "INV"
+      const invoiceNumber = invoiceData.invoiceNumber || `${prefix}-0001`
       const filename = `${invoiceNumber}_${customerName.replace(/[^a-zA-Z0-9]/g, "_")}_${dateStr}.pdf`
 
       const file = new File([pdfBlob], filename, {
@@ -302,7 +309,7 @@ MADE PRODUCT`
 
       toast({
         title: "Shared Successfully",
-        description: "Invoice PDF has been shared via your selected app.",
+        description: `${docType} PDF has been shared via your selected app.`,
       })
     } catch (error) {
       if ((error as Error).name !== "AbortError") {
@@ -330,8 +337,8 @@ MADE PRODUCT`
           setTimeout(() => setCopied(false), 2000)
 
           toast({
-            title: "PDF Data Copied",
-            description: "PDF data URL copied to clipboard. You can paste this in supported applications.",
+            title: `${docType} PDF Data Copied`,
+            description: "PDF data URL copied to clipboard.",
           })
         } catch (error) {
           toast({
@@ -351,50 +358,6 @@ MADE PRODUCT`
     }
   }
 
-  const sendViaMessenger = async () => {
-    if (!pdfBlob) return
-
-    try {
-      const customerName = invoiceData.customerName || "Customer"
-      const dateStr = format(invoiceData.date || new Date(), "yyyy-MM-dd")
-      const invoiceNumber = invoiceData.invoiceNumber || "INV-0001"
-      const filename = `${invoiceNumber}_${customerName.replace(/[^a-zA-Z0-9]/g, "_")}_${dateStr}.pdf`
-
-      // Create a File object from the blob
-      const file = new File([pdfBlob], filename, {
-        type: "application/pdf",
-      })
-
-      // Try to use Web Share API first
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-        })
-
-        toast({
-          title: "Shared Successfully",
-          description: "Choose your preferred messaging app to send the PDF.",
-        })
-      } else {
-        // Fallback: Download and provide instructions
-        downloadPdf()
-
-        toast({
-          title: "PDF Downloaded",
-          description: "Please manually attach the downloaded PDF to your message.",
-        })
-      }
-    } catch (error) {
-      if ((error as Error).name !== "AbortError") {
-        downloadPdf()
-        toast({
-          title: "Manual Sharing Required",
-          description: "PDF downloaded. Please attach it manually to your message.",
-        })
-      }
-    }
-  }
-
   const printPdf = () => {
     if (!pdfBlob || !pdfUrl) return
 
@@ -405,7 +368,7 @@ MADE PRODUCT`
       if (!printWindow) {
         toast({
           title: "Popup Blocked",
-          description: "Please allow popups to print the invoice.",
+          description: "Please allow popups to print.",
           variant: "destructive",
         })
         return
@@ -420,7 +383,7 @@ MADE PRODUCT`
 
       toast({
         title: "Print Dialog Opened",
-        description: "The print dialog should open automatically.",
+        description: `The print dialog for your ${docType.toLowerCase()} should open automatically.`,
       })
     } catch (error) {
       console.error("Error printing PDF:", error)
@@ -435,23 +398,30 @@ MADE PRODUCT`
   if (!isClient) {
     return (
       <Button className="w-full mt-4" disabled>
-        Generate Invoice
+        Generate {docType}
       </Button>
     )
   }
 
+  // Dynamic colors for primary download button
+  const buttonThemeClass = mode === "quotation"
+    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+    : mode === "receipt"
+      ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+      : "bg-slate-900 hover:bg-slate-800 text-white"
+
   if (!pdfBlob) {
     return (
-      <div className="space-y-2 mt-4">
-        <Button onClick={generatePdf} disabled={isGenerating} className="w-full">
-          {isGenerating ? "Generating PDF..." : "Generate & Download Invoice"}
+      <div className="space-y-2 mt-4 w-full">
+        <Button onClick={generatePdf} disabled={isGenerating} className={`w-full ${buttonThemeClass}`}>
+          {isGenerating ? `Generating ${docType}...` : `Generate & Download ${docType}`}
         </Button>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col gap-2 mt-4">
+    <div className="flex flex-col gap-2 mt-4 w-full">
       <div className="flex flex-col sm:flex-row gap-2">
         <Button onClick={downloadPdf} className="flex-1">
           <Download className="h-4 w-4 mr-2" />
@@ -460,7 +430,7 @@ MADE PRODUCT`
 
         <Button onClick={printPdf} variant="secondary" className="flex-1">
           <Printer className="h-4 w-4 mr-2" />
-          Print Invoice
+          Print {docType}
         </Button>
 
         <DropdownMenu>

@@ -27,7 +27,11 @@ interface OrderItem {
   rate: number
 }
 
-export default function OrderForm() {
+interface OrderFormProps {
+  mode?: "invoice" | "quotation" | "receipt"
+}
+
+export default function OrderForm({ mode = "invoice" }: OrderFormProps) {
   const [customerName, setCustomerName] = useState("")
   const [date, setDate] = useState<Date>(new Date())
   const [items, setItems] = useState<OrderItem[]>([{ id: "1", name: "", quantity: 1, rate: 0 }])
@@ -62,6 +66,33 @@ export default function OrderForm() {
     )
   }
 
+  // Dynamic values and styling based on mode
+  const isInvoice = mode === "invoice"
+  const isQuotation = mode === "quotation"
+  const isReceipt = mode === "receipt"
+
+  // Theme configuration
+  const theme = {
+    invoice: {
+      cardBorder: "border-t-slate-900",
+      primaryButton: "bg-slate-900 hover:bg-slate-800 text-white",
+      textAccent: "text-blue-600",
+      textTotal: "text-green-700 font-bold",
+    },
+    quotation: {
+      cardBorder: "border-t-indigo-600",
+      primaryButton: "bg-indigo-600 hover:bg-indigo-700 text-white",
+      textAccent: "text-indigo-600",
+      textTotal: "text-indigo-700 font-bold",
+    },
+    receipt: {
+      cardBorder: "border-t-emerald-600",
+      primaryButton: "bg-emerald-600 hover:bg-emerald-700 text-white",
+      textAccent: "text-emerald-600",
+      textTotal: "text-emerald-700 font-bold",
+    },
+  }[mode]
+
   // Calculate subtotal
   const subtotal = items.reduce((sum, item) => sum + item.quantity * item.rate, 0)
 
@@ -92,15 +123,18 @@ export default function OrderForm() {
     subtotal,
     discountAmount,
     total,
-    advancePayment,
-    balanceDue,
+    advancePayment: isQuotation ? 0 : advancePayment,
+    balanceDue: isQuotation ? total : balanceDue,
+    mode,
   }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <Card className="lg:col-span-2">
+      <Card className={cn("lg:col-span-2 border-t-4", theme.cardBorder)}>
         <CardHeader>
-          <CardTitle>Order Details</CardTitle>
+          <CardTitle>
+            {isInvoice ? "Invoice Details" : isQuotation ? "Quotation Details" : "Receipt Details"}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -108,7 +142,7 @@ export default function OrderForm() {
               <Label htmlFor="customer-name">Customer Name</Label>
               <Input
                 id="customer-name"
-                placeholder="Enter customer name"
+                placeholder={isInvoice ? "Enter customer name" : isQuotation ? "Enter prospective customer name" : "Enter customer name"}
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
               />
@@ -136,7 +170,7 @@ export default function OrderForm() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-medium">Items</h3>
-              <Button onClick={addItem} size="sm" variant="outline">
+              <Button onClick={addItem} size="sm" variant="outline" className="border-dashed hover:bg-slate-50">
                 <Plus className="h-4 w-4 mr-1" /> Add Item
               </Button>
             </div>
@@ -152,7 +186,7 @@ export default function OrderForm() {
 
             <div className="space-y-4">
               {items.map((item) => (
-                <div key={item.id} className="border rounded-lg bg-gray-50 overflow-hidden">
+                <div key={item.id} className="border rounded-lg bg-gray-50/50 overflow-hidden">
                   {/* Mobile Layout - Stacked */}
                   <div className="md:hidden p-4 space-y-3">
                     <div className="space-y-2">
@@ -202,7 +236,7 @@ export default function OrderForm() {
 
                     <div className="flex items-center justify-between pt-2 border-t border-gray-200">
                       <div className="text-sm text-gray-600">Total:</div>
-                      <div className="font-medium text-green-600">{formatCurrency(item.quantity * item.rate)}</div>
+                      <div className={cn("font-medium", theme.textAccent)}>{formatCurrency(item.quantity * item.rate)}</div>
                     </div>
 
                     <Button
@@ -248,7 +282,7 @@ export default function OrderForm() {
                         className="text-center"
                       />
                     </div>
-                    <div className="w-28 text-right font-medium text-green-600">
+                    <div className={cn("w-28 text-right font-medium", theme.textAccent)}>
                       {formatCurrency(item.quantity * item.rate)}
                     </div>
                     <Button
@@ -267,7 +301,7 @@ export default function OrderForm() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className={cn("grid grid-cols-1 gap-4", !isQuotation && "md:grid-cols-2")}>
             <div className="space-y-2">
               <Label htmlFor="discount">Discount (%)</Label>
               <Input
@@ -279,16 +313,20 @@ export default function OrderForm() {
                 onChange={(e) => setDiscount(Number.parseFloat(e.target.value) || 0)}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="advance-payment">Advance Payment (₹)</Label>
-              <Input
-                id="advance-payment"
-                type="number"
-                min="0"
-                value={advancePayment}
-                onChange={(e) => setAdvancePayment(Number.parseFloat(e.target.value) || 0)}
-              />
-            </div>
+            {!isQuotation && (
+              <div className="space-y-2">
+                <Label htmlFor="advance-payment">
+                  {isReceipt ? "Amount Paid (₹)" : "Advance Payment (₹)"}
+                </Label>
+                <Input
+                  id="advance-payment"
+                  type="number"
+                  min="0"
+                  value={advancePayment}
+                  onChange={(e) => setAdvancePayment(Number.parseFloat(e.target.value) || 0)}
+                />
+              </div>
+            )}
           </div>
         </CardContent>
         <CardFooter className="flex-col space-y-4">
@@ -300,26 +338,30 @@ export default function OrderForm() {
             <span>Discount ({discount}%):</span>
             <span>- {formatCurrency(discountAmount)}</span>
           </div>
-          <div className="w-full flex justify-between text-sm font-medium">
+          <div className="w-full flex justify-between text-sm font-medium border-b pb-2">
             <span>Total:</span>
             <span>{formatCurrency(total)}</span>
           </div>
-          {advancePayment > 0 && (
+
+          {!isQuotation && advancePayment > 0 && (
             <>
               <div className="w-full flex justify-between text-sm text-amber-600">
-                <span>Advance Paid:</span>
+                <span>{isReceipt ? "Amount Paid:" : "Advance Paid:"}</span>
                 <span>- {formatCurrency(advancePayment)}</span>
               </div>
-              <div className="w-full flex justify-between font-bold text-lg text-green-700 border-t pt-2">
-                <span>Balance Due:</span>
-                <span>{formatCurrency(balanceDue)}</span>
+              <div className="w-full flex justify-between pt-2">
+                <span className="font-bold text-lg text-slate-800">Balance Due:</span>
+                <span className={cn("text-lg", theme.textTotal)}>{formatCurrency(balanceDue)}</span>
               </div>
             </>
           )}
-          {advancePayment <= 0 && (
-            <div className="w-full flex justify-between font-medium text-lg border-t pt-2">
-              <span>Total Amount:</span>
-              <span>{formatCurrency(total)}</span>
+
+          {(isQuotation || advancePayment <= 0) && (
+            <div className="w-full flex justify-between pt-2">
+              <span className="font-bold text-lg text-slate-800">
+                {isQuotation ? "Estimated Total:" : "Total Amount:"}
+              </span>
+              <span className={cn("text-lg", theme.textTotal)}>{formatCurrency(total)}</span>
             </div>
           )}
 

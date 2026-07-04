@@ -1,7 +1,7 @@
 {
-  "name": "MadeWebs Invoices Generator",
-  "short_name": "MadeWebsInvoices",
-  "description": "Generate and manage invoices effortlessly",
+  "name": "MadeWebs Generators",
+  "short_name": "MadeWebsGenerators",
+  "description": "Generate and manage invoices, quotations, and receipts effortlessly",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
